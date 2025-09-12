@@ -1,0 +1,47 @@
+[project]
+name = "secure-endpoint-mcp-server"
+version = "0.1.0"
+description = "Absolute Security Secure Endpoint MCP server"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp",
+    "httpx",
+    "pydantic",
+    "pydantic-settings",
+    "pytest>=8.4.1",
+    "python-dotenv",
+    "structlog",
+    "html2text",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "mypy",
+    "black",
+    "isort",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
