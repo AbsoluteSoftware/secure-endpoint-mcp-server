@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Lint, Typecheck, Test, and Build Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install project (with dev extras)
+        run: |
+          uv pip install --system -e ".[dev]"
+
+      - name: Show environment
+        run: |
+          python --version
+          uv --version
+          pip list
+
+      - name: Lint (black)
+        run: black --check .
+
+      - name: Import order (isort)
+        run: isort --check-only .
+
+      - name: Type check (mypy)
+        run: mypy .
+
+      - name: Run tests (pytest)
+        run: pytest -q --maxfail=1 --disable-warnings --cov=secure_endpoint_mcp --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage.xml
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          load: false
+          tags: secure-endpoint-mcp-server:ci
