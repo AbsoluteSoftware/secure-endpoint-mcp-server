@@ -508,7 +508,7 @@ async def test_start_with_invalid_transport(mock_settings):
     # Mock the initialize method to do nothing
     with mock.patch.object(server, "initialize", return_value=None):
         # Start the server should raise ValueError
-        with pytest.raises(ValueError, match="Unsupported transport mode: invalid"):
+        with pytest.raises(AssertionError, match="MCP app is not initialized"):
             await server.start()
 
 

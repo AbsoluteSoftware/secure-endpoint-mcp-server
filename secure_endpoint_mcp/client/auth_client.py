@@ -7,7 +7,7 @@
 
 import json
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 from urllib.parse import urlencode, urlparse
 
 import httpx
@@ -23,7 +23,7 @@ class AbsoluteAuthClient(httpx.AsyncClient):
     """HTTP client with JWS authentication for Absolute API."""
 
     def __init__(
-        self, api_key: str, api_secret: str, timeout_seconds: int = 30, **kwargs
+        self, api_key: str, api_secret: str, timeout_seconds: int = 30, **kwargs: Any
     ):
         """
         Initialize the client with API credentials.
@@ -81,13 +81,14 @@ class AbsoluteAuthClient(httpx.AsyncClient):
         signed = jws.serialize_compact(
             headers, json.dumps(request_payload_data), self.token_secret
         )
+        signed = cast(str, signed)
 
         # Log the JWS creation
         logger.debug(f"Created JWS for request: {method} {path}: {signed}")
 
         return signed
 
-    async def request(
+    async def request(  # type: ignore[override]
         self,
         method: str,
         url: str,
@@ -104,7 +105,7 @@ class AbsoluteAuthClient(httpx.AsyncClient):
         timeout: Optional[Any] = None,
         extensions: Optional[Any] = None,
         api_endpoint: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> httpx.Response:
         """
         Make a request with JWS authentication.
@@ -163,14 +164,19 @@ class AbsoluteAuthClient(httpx.AsyncClient):
         endpoint = api_endpoint if api_endpoint else self.api_endpoint
 
         # Make the request to the API endpoint with the signed payload
+        super_kwargs: Dict[str, Any] = {
+            "content": signed_payload,
+            "headers": jws_headers,
+            "cookies": cookies,
+            "timeout": timeout,
+            "extensions": extensions,
+        }
+        if follow_redirects is not None:
+            super_kwargs["follow_redirects"] = follow_redirects
+
         return await super().request(
             "POST",  # JWS validation always uses POST
             endpoint,
-            content=signed_payload,
-            headers=jws_headers,
-            cookies=cookies,
-            follow_redirects=follow_redirects,
-            timeout=timeout,
-            extensions=extensions,
+            **super_kwargs,
             **kwargs,
         )

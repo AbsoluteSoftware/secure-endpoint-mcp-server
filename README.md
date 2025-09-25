@@ -187,5 +187,5 @@ npx @modelcontextprotocol/inspector \
   -e TRANSPORT_MODE=stdio \
   uv run main.py \
   --tool-name get_devices \
-  --tool-arg pageSize=1
+  --tool-arg pageSize=\"1\"
 ```

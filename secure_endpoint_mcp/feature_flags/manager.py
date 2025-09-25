@@ -13,7 +13,7 @@ from secure_endpoint_mcp.config.settings import settings
 class FeatureFlagManager:
     """Manager for feature flags to enable/disable groups of APIs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Get feature flags from environment variables with ABS_FEATURE_ prefix
         self._flags: Dict[str, bool] = settings.get_feature_flags_from_env()
         # Store API paths with their HTTP methods as (path, method) tuples

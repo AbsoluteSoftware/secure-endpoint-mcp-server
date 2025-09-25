@@ -5,7 +5,7 @@
 #  the MIT License as set out in the License.txt file.
 #
 
-from typing import Dict, Set, Tuple, Any
+from typing import Any, Dict, Optional, Set, Tuple, cast
 
 import html2text
 import httpx
@@ -13,7 +13,7 @@ from fastmcp.server.openapi import FastMCPOpenAPI, MCPType
 
 from secure_endpoint_mcp.client.auth_client import AbsoluteAuthClient
 from secure_endpoint_mcp.config.logging import get_logger
-from secure_endpoint_mcp.config.settings import settings, TransportMode
+from secure_endpoint_mcp.config.settings import TransportMode, settings
 from secure_endpoint_mcp.feature_flags.manager import feature_flags
 
 logger = get_logger(__name__)
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 class MCPServer:
     """MCP server using FastMCP framework to adopt an OpenAPI spec."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._api_groups: Dict[str, Set[Tuple[str, str]]] = {}
 
         # Create the HTTP client with authentication
@@ -31,10 +31,13 @@ class MCPServer:
             api_secret=settings.API_SECRET,
             timeout_seconds=settings.HTTP_TIMEOUT_SECONDS,
         )
-        self.openapi_spec = None
+        # OpenAPI spec storage (populated during initialize)
+        self.openapi_spec: Optional[Dict[str, Any]] = None
+        # FastMCP app instance (created during initialize)
+        self.app: Optional[FastMCPOpenAPI] = None
 
         # Use the remote OpenAPI spec URL
-        self.openapi_spec_url = f"{settings.API_HOST}/api-doc/spec/openapi.json"
+        self.openapi_spec_url: str = f"{settings.API_HOST}/api-doc/spec/openapi.json"
         logger.info(f"Using OpenAPI spec from: {self.openapi_spec_url}")
 
     def _strip_html_from_description(self, obj: Any) -> None:
@@ -101,7 +104,7 @@ class MCPServer:
         """Transform tag name from 'Space Case' to 'lower-case-with-dashes'."""
         return tag.lower().replace(" ", "-")
 
-    def _route_map_fn(self, route, mcp_type):
+    def _route_map_fn(self, route: Any, mcp_type: MCPType) -> MCPType:
         """
         Route mapping function for FastMCPOpenAPI.
 
@@ -146,7 +149,7 @@ class MCPServer:
         # If we can't categorize the route based on HTTP method, return the original mcp_type
         return mcp_type
 
-    async def _fetch_openapi_spec(self) -> dict:
+    async def _fetch_openapi_spec(self) -> Dict[str, Any]:
         """Fetch the OpenAPI spec from the URL."""
         if self.openapi_spec_url is None:
             raise ValueError("OPENAPI_SPEC_URL is None. Cannot fetch OpenAPI spec.")
@@ -154,11 +157,12 @@ class MCPServer:
         async with httpx.AsyncClient() as client:
             response = await client.get(str(self.openapi_spec_url))
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
     async def _extract_api_groups_from_openapi(self) -> None:
         """Extract API groups from the OpenAPI spec for feature flags."""
         # Use the OpenAPI spec that's already stored in the instance
+        assert self.openapi_spec is not None, "OpenAPI spec is not loaded"
         paths = self.openapi_spec.get("paths", {})
 
         # Group API paths by tags for feature flags
@@ -194,6 +198,9 @@ class MCPServer:
         host = settings.SERVER_HOST
         port = settings.SERVER_PORT
         transport_mode = settings.TRANSPORT_MODE
+
+        # The FastMCP app should have been created during initialize
+        assert self.app is not None, "MCP app is not initialized"
 
         if transport_mode == TransportMode.HTTP:
             logger.info(f"Starting MCP server with HTTP transport on {host}:{port}")
