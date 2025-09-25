@@ -47,7 +47,9 @@ async def test_auth_client_get():
 
                 # Assert that the parameters were passed correctly
                 assert method == "POST"  # JWS validation always uses POST
-                assert url == f"{settings.API_HOST}/jws/validate"  # Default API endpoint
+                assert (
+                    url == f"{settings.API_HOST}/jws/validate"
+                )  # Default API endpoint
                 assert content == "mocked.jws.payload"
                 assert headers["content-type"] == "text/plain"
 
@@ -108,7 +110,9 @@ async def test_auth_client_post():
 
                 # Assert that the parameters were passed correctly
                 assert method == "POST"  # JWS validation always uses POST
-                assert url == f"{settings.API_HOST}/jws/validate"  # Default API endpoint
+                assert (
+                    url == f"{settings.API_HOST}/jws/validate"
+                )  # Default API endpoint
                 assert content == "mocked.jws.payload"
                 assert headers["content-type"] == "text/plain"
 
@@ -156,9 +160,7 @@ async def test_auth_client_request():
             with mock.patch("time.time", return_value=1234567890):
                 # Call the request method with a custom method and params
                 response = await client.request(
-                    "CUSTOM",
-                    "/api/test",
-                    params={"param": "value"}
+                    "CUSTOM", "/api/test", params={"param": "value"}
                 )
 
                 # Assert that the parent class request method was called
@@ -173,7 +175,9 @@ async def test_auth_client_request():
 
                 # Assert that the parameters were passed correctly
                 assert method == "POST"  # JWS validation always uses POST
-                assert url == f"{settings.API_HOST}/jws/validate"  # Default API endpoint
+                assert (
+                    url == f"{settings.API_HOST}/jws/validate"
+                )  # Default API endpoint
                 assert content == "mocked.jws.payload"
                 assert headers["content-type"] == "text/plain"
 
@@ -219,11 +223,12 @@ async def test_auth_client_with_custom_headers():
             # Mock time.time to return a fixed timestamp
             with mock.patch("time.time", return_value=1234567890):
                 # Call the request method with custom headers
-                custom_headers = {"Custom-Header": "value", "Another-Header": "another-value"}
+                custom_headers = {
+                    "Custom-Header": "value",
+                    "Another-Header": "another-value",
+                }
                 response = await client.request(
-                    "GET",
-                    "/api/test",
-                    headers=custom_headers
+                    "GET", "/api/test", headers=custom_headers
                 )
 
                 # Assert that the parent class request method was called
@@ -264,9 +269,7 @@ async def test_auth_client_with_custom_endpoint():
                 # Call the request method with a custom API endpoint
                 custom_endpoint = "https://api.us.absolute.com/jws/validate"
                 response = await client.request(
-                    "GET",
-                    "/api/test",
-                    api_endpoint=custom_endpoint
+                    "GET", "/api/test", api_endpoint=custom_endpoint
                 )
 
                 # Assert that the parent class request method was called

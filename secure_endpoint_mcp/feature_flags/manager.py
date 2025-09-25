@@ -19,7 +19,9 @@ class FeatureFlagManager:
         # Store API paths with their HTTP methods as (path, method) tuples
         self._api_groups: Dict[str, Set[Tuple[str, str]]] = {}
 
-    def register_api_group(self, group_name: str, api_path: str, http_method: str) -> None:
+    def register_api_group(
+        self, group_name: str, api_path: str, http_method: str
+    ) -> None:
         """
         Register an API path with its HTTP method under a feature flag name.
 
@@ -58,16 +60,12 @@ class FeatureFlagManager:
 
     def get_enabled_api_groups(self) -> Set[str]:
         """Get the names of all enabled API groups."""
-        return {
-            group_name for group_name, enabled in self._flags.items()
-            if enabled
-        }
+        return {group_name for group_name, enabled in self._flags.items() if enabled}
 
     def get_disabled_api_groups(self) -> Set[str]:
         """Get the names of all disabled API groups."""
         return {
-            group_name for group_name, enabled in self._flags.items()
-            if not enabled
+            group_name for group_name, enabled in self._flags.items() if not enabled
         }
 
 

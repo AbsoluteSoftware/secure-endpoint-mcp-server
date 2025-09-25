@@ -22,7 +22,9 @@ logger = get_logger(__name__)
 class AbsoluteAuthClient(httpx.AsyncClient):
     """HTTP client with JWS authentication for Absolute API."""
 
-    def __init__(self, api_key: str, api_secret: str, timeout_seconds: int = 30, **kwargs):
+    def __init__(
+        self, api_key: str, api_secret: str, timeout_seconds: int = 30, **kwargs
+    ):
         """
         Initialize the client with API credentials.
 
@@ -39,8 +41,13 @@ class AbsoluteAuthClient(httpx.AsyncClient):
         self.token_secret = api_secret
         self.api_endpoint = f"{settings.API_HOST}/jws/validate"
 
-    def _prepare_jws_payload(self, method: str, path: str, query_string: str,
-                             json_data: Optional[Dict[str, Any]] = None) -> str:
+    def _prepare_jws_payload(
+        self,
+        method: str,
+        path: str,
+        query_string: str,
+        json_data: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
         Prepare the JWS payload for authentication.
 
@@ -56,9 +63,7 @@ class AbsoluteAuthClient(httpx.AsyncClient):
 
         # Prepare the request payload
         payload = json_data if json_data else {}
-        request_payload_data = {
-            "data": payload
-        }
+        request_payload_data = {"data": payload}
 
         # Prepare the JWS headers
         headers = {
@@ -68,12 +73,14 @@ class AbsoluteAuthClient(httpx.AsyncClient):
             "content-type": "application/json",
             "uri": path,
             "query-string": query_string,
-            "issuedAt": round(time.time() * 1000)
+            "issuedAt": round(time.time() * 1000),
         }
 
         # Create the JWS
         jws = JsonWebSignature()
-        signed = jws.serialize_compact(headers, json.dumps(request_payload_data), self.token_secret)
+        signed = jws.serialize_compact(
+            headers, json.dumps(request_payload_data), self.token_secret
+        )
 
         # Log the JWS creation
         logger.debug(f"Created JWS for request: {method} {path}: {signed}")
@@ -81,23 +88,23 @@ class AbsoluteAuthClient(httpx.AsyncClient):
         return signed
 
     async def request(
-            self,
-            method: str,
-            url: str,
-            *,
-            content: Optional[Any] = None,
-            data: Optional[Any] = None,
-            files: Optional[Any] = None,
-            json: Optional[Dict[str, Any]] = None,
-            params: Optional[Dict[str, Any]] = None,
-            headers: Optional[Dict[str, str]] = None,
-            cookies: Optional[Any] = None,
-            auth: Optional[Any] = None,
-            follow_redirects: Optional[bool] = None,
-            timeout: Optional[Any] = None,
-            extensions: Optional[Any] = None,
-            api_endpoint: Optional[str] = None,
-            **kwargs
+        self,
+        method: str,
+        url: str,
+        *,
+        content: Optional[Any] = None,
+        data: Optional[Any] = None,
+        files: Optional[Any] = None,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        cookies: Optional[Any] = None,
+        auth: Optional[Any] = None,
+        follow_redirects: Optional[bool] = None,
+        timeout: Optional[Any] = None,
+        extensions: Optional[Any] = None,
+        api_endpoint: Optional[str] = None,
+        **kwargs,
     ) -> httpx.Response:
         """
         Make a request with JWS authentication.
@@ -165,5 +172,5 @@ class AbsoluteAuthClient(httpx.AsyncClient):
             follow_redirects=follow_redirects,
             timeout=timeout,
             extensions=extensions,
-            **kwargs
+            **kwargs,
         )

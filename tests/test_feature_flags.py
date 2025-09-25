@@ -36,10 +36,14 @@ def test_feature_flag_manager_init_with_disabled_flag():
     assert manager._api_groups == {}
 
 
-@mock.patch.dict(os.environ, {
-    "ABS_FEATURE_DEVICE_REPORTING": "enabled",
-    "ABS_FEATURE_SOFTWARE_REPORTING": "disabled"
-}, clear=True)
+@mock.patch.dict(
+    os.environ,
+    {
+        "ABS_FEATURE_DEVICE_REPORTING": "enabled",
+        "ABS_FEATURE_SOFTWARE_REPORTING": "disabled",
+    },
+    clear=True,
+)
 def test_feature_flag_manager_init_with_multiple_flags():
     """Test that FeatureFlagManager initializes with multiple feature flags."""
     manager = FeatureFlagManager()
@@ -54,7 +58,10 @@ def test_register_api_group():
     manager.register_api_group("test_group", "/api/test2", "POST")
 
     assert "test_group" in manager._api_groups
-    assert manager._api_groups["test_group"] == {("/api/test1", "GET"), ("/api/test2", "POST")}
+    assert manager._api_groups["test_group"] == {
+        ("/api/test1", "GET"),
+        ("/api/test2", "POST"),
+    }
 
 
 def test_is_api_enabled_no_flags():
@@ -78,8 +85,12 @@ def test_is_api_enabled_with_group():
     assert manager.is_api_enabled("/api/other", "GET") is True
 
     # Test that different methods on the same path can have different enabled states
-    assert manager.is_api_enabled("/api/test1", "POST") is True  # Not in any group, so enabled by default
-    assert manager.is_api_enabled("/api/test2", "GET") is True   # Not in any group, so enabled by default
+    assert (
+        manager.is_api_enabled("/api/test1", "POST") is True
+    )  # Not in any group, so enabled by default
+    assert (
+        manager.is_api_enabled("/api/test2", "GET") is True
+    )  # Not in any group, so enabled by default
 
 
 def test_get_enabled_api_groups():

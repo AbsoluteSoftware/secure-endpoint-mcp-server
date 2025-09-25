@@ -29,7 +29,7 @@ class MCPServer:
         self.http_client = AbsoluteAuthClient(
             api_key=settings.API_KEY,
             api_secret=settings.API_SECRET,
-            timeout_seconds=settings.HTTP_TIMEOUT_SECONDS
+            timeout_seconds=settings.HTTP_TIMEOUT_SECONDS,
         )
         self.openapi_spec = None
 
@@ -68,7 +68,9 @@ class MCPServer:
 
     async def initialize(self) -> None:
         """Initialize the MCP server by loading the OpenAPI spec."""
-        logger.info(f"Initializing MCP server with OpenAPI spec from: {self.openapi_spec_url}")
+        logger.info(
+            f"Initializing MCP server with OpenAPI spec from: {self.openapi_spec_url}"
+        )
         # Fetch the OpenAPI spec from the URL
         try:
             self.openapi_spec = await self._fetch_openapi_spec()
@@ -92,12 +94,12 @@ class MCPServer:
         self.app = FastMCPOpenAPI(
             openapi_spec=self.openapi_spec,
             client=self.http_client,
-            route_map_fn=self._route_map_fn
+            route_map_fn=self._route_map_fn,
         )
 
     def _transform_tag_name(self, tag: str) -> str:
         """Transform tag name from 'Space Case' to 'lower-case-with-dashes'."""
-        return tag.lower().replace(' ', '-')
+        return tag.lower().replace(" ", "-")
 
     def _route_map_fn(self, route, mcp_type):
         """
@@ -173,7 +175,8 @@ class MCPServer:
                     # Store both path and HTTP method as a tuple
                     self._api_groups[transformed_tag].add((path, method.upper()))
                     logger.info(
-                        f"Registered route: {method.upper()} {path} to API group: {transformed_tag}")
+                        f"Registered route: {method.upper()} {path} to API group: {transformed_tag}"
+                    )
 
         # Register API groups with the feature flag manager
         for group_name, paths_with_methods in self._api_groups.items():
