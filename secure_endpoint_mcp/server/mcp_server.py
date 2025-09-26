@@ -15,6 +15,7 @@ from secure_endpoint_mcp.client.auth_client import AbsoluteAuthClient
 from secure_endpoint_mcp.config.logging import get_logger
 from secure_endpoint_mcp.config.settings import TransportMode, settings
 from secure_endpoint_mcp.feature_flags.manager import feature_flags
+from secure_endpoint_mcp.server.schema_fix import create_schema_fixing_component_fn
 
 logger = get_logger(__name__)
 
@@ -37,7 +38,9 @@ class MCPServer:
         self.app: Optional[FastMCPOpenAPI] = None
 
         # Use the remote OpenAPI spec URL
-        self.openapi_spec_url: str = f"{settings.API_HOST}/api-doc/spec/openapi.json"
+        self.openapi_spec_url: str = (
+            f"{settings.API_HOST}/api-doc/spec/openapi.full.json"
+        )
         logger.info(f"Using OpenAPI spec from: {self.openapi_spec_url}")
 
     def _strip_html_from_description(self, obj: Any) -> None:
@@ -98,6 +101,7 @@ class MCPServer:
             openapi_spec=self.openapi_spec,
             client=self.http_client,
             route_map_fn=self._route_map_fn,
+            mcp_component_fn=create_schema_fixing_component_fn(disable_validation=True),
         )
 
     def _transform_tag_name(self, tag: str) -> str:

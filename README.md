@@ -21,7 +21,7 @@ security stack.
         "-i",
         "--rm",
         "-e",
-        "OPENAPI_SPEC_URL",
+        "API_HOST",
         "-e",
         "API_KEY",
         "-e",

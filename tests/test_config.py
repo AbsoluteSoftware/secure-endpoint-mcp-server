@@ -18,6 +18,7 @@ def test_settings_with_required_values():
         {
             "API_KEY": "foo",
             "API_SECRET": "bar",
+            "API_HOST": "https://api1.absolute.com",
         },
     ):
         settings = Settings()
@@ -27,7 +28,7 @@ def test_settings_with_required_values():
         assert settings.SERVER_HOST == "0.0.0.0"
         assert settings.SERVER_PORT == 8000
         assert settings.LOG_LEVEL == "info"
-        assert settings.API_HOST == "https://api.absolute.com"  # Default API_HOST
+        assert settings.API_HOST == "https://api1.absolute.com"
 
 
 def test_get_feature_flags_from_env_default():
