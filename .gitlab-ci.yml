@@ -1,5 +1,0 @@
-include:
-  - project: 'cloud/gitlab-cicd-template'
-    ref: $CICD_TEMPLATE_REF
-    file:
-      - .docker.gitlab-ci.yml
