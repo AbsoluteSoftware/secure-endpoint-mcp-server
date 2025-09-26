@@ -14,6 +14,7 @@ a function to get a logger with the appropriate configuration.
 
 import logging
 import sys
+from typing import cast
 
 import structlog
 from structlog.types import Processor
@@ -88,7 +89,7 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     Returns:
         A structlog logger configured for JSON logging
     """
-    return structlog.get_logger(name)
+    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))
 
 
 # Configure logging when the module is imported

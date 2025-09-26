@@ -14,6 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class TransportMode(str, Enum):
     """Transport modes supported by the MCP server."""
+
     HTTP = "http"
     STDIO = "stdio"
     # deprecated!
@@ -65,7 +66,7 @@ class Settings(BaseSettings):
         for key, value in os.environ.items():
             if key.startswith(prefix):
                 # Convert from UPPER_SNAKE_CASE to lower-case-with-dashes
-                feature_name = key[len(prefix):].lower().replace('_', '-')
+                feature_name = key[len(prefix) :].lower().replace("_", "-")
                 # Check if the value is "enabled" or "disabled"
                 result[feature_name] = value.lower() == "enabled"
 

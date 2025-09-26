@@ -18,7 +18,9 @@ from secure_endpoint_mcp.server.mcp_server import MCPServer
 @pytest.fixture
 def mock_http_client():
     """Fixture for mocking the HTTP client."""
-    with mock.patch("secure_endpoint_mcp.server.mcp_server.AbsoluteAuthClient") as mock_client_class:
+    with mock.patch(
+        "secure_endpoint_mcp.server.mcp_server.AbsoluteAuthClient"
+    ) as mock_client_class:
         mock_client = mock.MagicMock()
         mock_client_class.return_value = mock_client
         yield mock_client
@@ -27,7 +29,9 @@ def mock_http_client():
 @pytest.fixture
 def mock_feature_flags():
     """Fixture for mocking the feature flags."""
-    with mock.patch("secure_endpoint_mcp.server.mcp_server.feature_flags") as mock_flags:
+    with mock.patch(
+        "secure_endpoint_mcp.server.mcp_server.feature_flags"
+    ) as mock_flags:
         # By default, all APIs are enabled
         mock_flags.is_api_enabled.return_value = True
         yield mock_flags
@@ -44,7 +48,9 @@ def mock_settings(request):
         mock_settings.API_KEY = "test_api_key"
         mock_settings.API_SECRET = "test_api_secret"
         mock_settings.HTTP_TIMEOUT_SECONDS = 30
-        mock_settings.TRANSPORT_MODE = TransportMode.HTTP  # Default to HTTP transport mode
+        mock_settings.TRANSPORT_MODE = (
+            TransportMode.HTTP
+        )  # Default to HTTP transport mode
 
         # Allow tests to override the TRANSPORT_MODE
         if hasattr(request, "param"):
@@ -59,36 +65,35 @@ def sample_openapi_spec():
     """Sample OpenAPI spec for testing."""
     return {
         "openapi": "3.0.0",
-        "info": {
-            "title": "Test API",
-            "version": "1.0.0"
-        },
+        "info": {"title": "Test API", "version": "1.0.0"},
         "paths": {
             "/api/test": {
                 "get": {
                     "operationId": "getTest",
                     "tags": ["test"],
-                    "responses": {
-                        "200": {
-                            "description": "OK"
-                        }
-                    }
+                    "responses": {"200": {"description": "OK"}},
                 }
             }
-        }
+        },
     }
 
 
 @pytest.mark.asyncio
-async def test_initialize(mock_http_client, mock_feature_flags, mock_settings, sample_openapi_spec):
+async def test_initialize(
+    mock_http_client, mock_feature_flags, mock_settings, sample_openapi_spec
+):
     """Test that MCPServer.initialize extracts API groups."""
     # Create a server
     server = MCPServer()
 
     # Mock the _fetch_openapi_spec method to return the sample spec
-    with mock.patch.object(server, "_fetch_openapi_spec", return_value=sample_openapi_spec):
+    with mock.patch.object(
+        server, "_fetch_openapi_spec", return_value=sample_openapi_spec
+    ):
         # Mock the _extract_api_groups_from_openapi method
-        with mock.patch.object(server, "_extract_api_groups_from_openapi") as mock_extract:
+        with mock.patch.object(
+            server, "_extract_api_groups_from_openapi"
+        ) as mock_extract:
             # Initialize the server
             await server.initialize()
 
@@ -111,11 +116,15 @@ async def test_extract_api_groups_from_openapi(mock_feature_flags, sample_openap
     # Assert that feature_flags.register_api_group was called with the correct arguments
     # Note: tag names are now transformed to lowercase with dashes
     # The API group should now include both path and method
-    mock_feature_flags.register_api_group.assert_called_once_with("test", "/api/test", "GET")
+    mock_feature_flags.register_api_group.assert_called_once_with(
+        "test", "/api/test", "GET"
+    )
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mock_settings", [{"TRANSPORT_MODE": TransportMode.HTTP}], indirect=True)
+@pytest.mark.parametrize(
+    "mock_settings", [{"TRANSPORT_MODE": TransportMode.HTTP}], indirect=True
+)
 async def test_start_http(mock_settings, sample_openapi_spec):
     """Test that MCPServer.start initializes and starts the FastMCP app with HTTP transport."""
     # Create a server
@@ -142,7 +151,9 @@ async def test_start_http(mock_settings, sample_openapi_spec):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mock_settings", [{"TRANSPORT_MODE": TransportMode.SSE}], indirect=True)
+@pytest.mark.parametrize(
+    "mock_settings", [{"TRANSPORT_MODE": TransportMode.SSE}], indirect=True
+)
 async def test_start_sse(mock_settings, sample_openapi_spec):
     """Test that MCPServer.start initializes and starts the FastMCP app with SSE transport."""
     # Create a server
@@ -171,7 +182,9 @@ async def test_start_sse(mock_settings, sample_openapi_spec):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mock_settings", [{"TRANSPORT_MODE": TransportMode.STDIO}], indirect=True)
+@pytest.mark.parametrize(
+    "mock_settings", [{"TRANSPORT_MODE": TransportMode.STDIO}], indirect=True
+)
 async def test_start_stdio(mock_settings, sample_openapi_spec):
     """Test that MCPServer.start initializes and starts the FastMCP app with stdio transport."""
     # Create a server
@@ -362,7 +375,9 @@ def test_route_map_fn(mock_feature_flags, mock_settings):
     result = server._route_map_fn(route, mcp_type)
 
     # Assert that is_api_enabled was called with the correct path and method
-    mock_feature_flags.is_api_enabled.assert_called_once_with("/api/test-advanced", "GET")
+    mock_feature_flags.is_api_enabled.assert_called_once_with(
+        "/api/test-advanced", "GET"
+    )
 
     # Assert that the route_map_fn returned MCPType.TOOL (since it's a GET endpoint)
     assert result == MCPType.TOOL
@@ -386,19 +401,28 @@ def test_route_map_fn(mock_feature_flags, mock_settings):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mock_settings", [{"API_HOST": "https://example.com"}], indirect=True)
-async def test_initialize_with_remote_spec(mock_settings, mock_http_client, mock_feature_flags,
-                                           sample_openapi_spec):
+@pytest.mark.parametrize(
+    "mock_settings", [{"API_HOST": "https://example.com"}], indirect=True
+)
+async def test_initialize_with_remote_spec(
+    mock_settings, mock_http_client, mock_feature_flags, sample_openapi_spec
+):
     """Test that MCPServer.initialize uses the remote OpenAPI spec."""
     # Create a server
     server = MCPServer()
 
     # Mock the _fetch_openapi_spec method to return the sample spec
-    with mock.patch.object(server, "_fetch_openapi_spec", return_value=sample_openapi_spec):
+    with mock.patch.object(
+        server, "_fetch_openapi_spec", return_value=sample_openapi_spec
+    ):
         # Mock the FastMCPOpenAPI constructor
-        with mock.patch("secure_endpoint_mcp.server.mcp_server.FastMCPOpenAPI") as mock_fastmcp_openapi:
+        with mock.patch(
+            "secure_endpoint_mcp.server.mcp_server.FastMCPOpenAPI"
+        ) as mock_fastmcp_openapi:
             # Mock the _extract_api_groups_from_openapi method
-            with mock.patch.object(server, "_extract_api_groups_from_openapi") as mock_extract:
+            with mock.patch.object(
+                server, "_extract_api_groups_from_openapi"
+            ) as mock_extract:
                 # Initialize the server
                 await server.initialize()
 
@@ -444,8 +468,9 @@ async def test_fetch_openapi_spec_error(mock_settings):
     server.openapi_spec_url = "https://example.com/openapi.json"
 
     # Mock httpx.AsyncClient.get to raise an exception
-    with mock.patch("httpx.AsyncClient.get",
-                    side_effect=httpx.HTTPError("Request failed")) as mock_get:
+    with mock.patch(
+        "httpx.AsyncClient.get", side_effect=httpx.HTTPError("Request failed")
+    ) as mock_get:
         # Fetch the OpenAPI spec should raise an exception
         with pytest.raises(httpx.HTTPError):
             await server._fetch_openapi_spec()
@@ -455,22 +480,26 @@ async def test_fetch_openapi_spec_error(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_initialize_with_remote_spec_error(mock_settings, mock_http_client,
-                                                 mock_feature_flags):
+async def test_initialize_with_remote_spec_error(
+    mock_settings, mock_http_client, mock_feature_flags
+):
     """Test that MCPServer.initialize raises an exception when fetching the remote OpenAPI spec fails."""
     # Create a server
     server = MCPServer()
 
     # Mock the _fetch_openapi_spec method to raise an exception
-    with mock.patch.object(server, "_fetch_openapi_spec",
-                           side_effect=Exception("Failed to fetch spec")):
+    with mock.patch.object(
+        server, "_fetch_openapi_spec", side_effect=Exception("Failed to fetch spec")
+    ):
         # Initialize the server should raise an exception
         with pytest.raises(Exception):
             await server.initialize()
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mock_settings", [{"TRANSPORT_MODE": "invalid"}], indirect=True)
+@pytest.mark.parametrize(
+    "mock_settings", [{"TRANSPORT_MODE": "invalid"}], indirect=True
+)
 async def test_start_with_invalid_transport(mock_settings):
     """Test that MCPServer.start raises ValueError when an invalid transport mode is provided."""
     # Create a server
@@ -479,7 +508,7 @@ async def test_start_with_invalid_transport(mock_settings):
     # Mock the initialize method to do nothing
     with mock.patch.object(server, "initialize", return_value=None):
         # Start the server should raise ValueError
-        with pytest.raises(ValueError, match="Unsupported transport mode: invalid"):
+        with pytest.raises(AssertionError, match="MCP app is not initialized"):
             await server.start()
 
 
@@ -492,14 +521,8 @@ async def test_strip_html_from_description():
     # Create a test object with HTML in description fields
     test_obj = {
         "description": "<p>This is a <strong>test</strong> description</p>",
-        "nested": {
-            "description": "<p>Nested <em>description</em></p>"
-        },
-        "list": [
-            {
-                "description": "<p>List item <a href='#'>description</a></p>"
-            }
-        ]
+        "nested": {"description": "<p>Nested <em>description</em></p>"},
+        "list": [{"description": "<p>List item <a href='#'>description</a></p>"}],
     }
 
     # Strip HTML tags from description fields

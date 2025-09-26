@@ -21,14 +21,14 @@ security stack.
         "-i",
         "--rm",
         "-e",
-        "OPENAPI_SPEC_URL",
+        "API_HOST",
         "-e",
         "API_KEY",
         "-e",
         "API_SECRET",
         "-e",
         "TRANSPORT_MODE",
-        "ghcr.io/AbsoluteSoftware/mcp:latest"
+        "ghcr.io/AbsoluteSoftware/secure-endpoint-mcp-server:latest"
       ],
       "env": {
         "API_HOST": "https://api.absolute.com",
@@ -187,5 +187,5 @@ npx @modelcontextprotocol/inspector \
   -e TRANSPORT_MODE=stdio \
   uv run main.py \
   --tool-name get_devices \
-  --tool-arg pageSize=1
+  --tool-arg pageSize=\"1\"
 ```
