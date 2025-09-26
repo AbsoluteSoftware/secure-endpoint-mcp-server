@@ -28,7 +28,7 @@ security stack.
         "API_SECRET",
         "-e",
         "TRANSPORT_MODE",
-        "ghcr.io/AbsoluteSoftware/secure-endpoint-mcp-server:latest"
+        "ghcr.io/absolutesoftware/secure-endpoint-mcp-server:latest"
       ],
       "env": {
         "API_HOST": "https://api.absolute.com",
