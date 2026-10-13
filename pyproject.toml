@@ -5,14 +5,16 @@ description = "Absolute Security Secure Endpoint MCP server"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastmcp",
-    "httpx",
-    "pydantic",
-    "pydantic-settings",
+    "fastmcp>=4.0,<5",
+    "httpx>=0.28,<1",
+    "pydantic>=2.11,<3",
+    "pydantic-settings>=2.10,<3",
     "pytest>=8.4.1",
-    "python-dotenv",
-    "structlog",
-    "html2text",
+    "python-dotenv>=1.1,<2",
+    "structlog>=25.4,<26",
+    "html2text>=2025.4.15,<2026",
+    "authlib>=1.8,<2",
+    "starlette>=1.6,<2",
 ]
 
 [project.optional-dependencies]
@@ -25,11 +27,17 @@ dev = [
     "isort",
 ]
 
+[tool.setuptools.packages.find]
+include = ["secure_endpoint_mcp*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
 asyncio_mode = "auto"
+markers = [
+    "qa3_integration: real-network test against the QA3 sandbox, run manually only (uv run pytest tests_qa3/)",
+]
 
 [tool.mypy]
 python_version = "3.13"

@@ -8,7 +8,6 @@
 import json
 import time
 from typing import Any, Dict, Optional, cast
-from urllib.parse import urlencode, urlparse
 
 import httpx
 from authlib.jose import JsonWebSignature
@@ -17,6 +16,16 @@ from secure_endpoint_mcp.config.logging import get_logger
 from secure_endpoint_mcp.config.settings import settings
 
 logger = get_logger(__name__)
+
+_PASSTHROUGH_EXCLUDED_HEADERS = {
+    "accept",
+    "accept-encoding",
+    "connection",
+    "content-length",
+    "content-type",
+    "host",
+    "user-agent",
+}
 
 
 class AbsoluteAuthClient(httpx.AsyncClient):
@@ -34,7 +43,6 @@ class AbsoluteAuthClient(httpx.AsyncClient):
             timeout_seconds: Timeout for HTTP requests in seconds
             **kwargs: Additional keyword arguments to pass to httpx.AsyncClient
         """
-        # Initialize the parent class with timeout and any other kwargs
         super().__init__(timeout=timeout_seconds, **kwargs)
 
         self.token_id = api_key
@@ -88,95 +96,64 @@ class AbsoluteAuthClient(httpx.AsyncClient):
 
         return signed
 
-    async def request(  # type: ignore[override]
+    async def send(
         self,
-        method: str,
-        url: str,
+        request: httpx.Request,
         *,
-        content: Optional[Any] = None,
-        data: Optional[Any] = None,
-        files: Optional[Any] = None,
-        json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        cookies: Optional[Any] = None,
-        auth: Optional[Any] = None,
-        follow_redirects: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-        extensions: Optional[Any] = None,
-        api_endpoint: Optional[str] = None,
-        **kwargs: Any,
+        stream: bool = False,
+        auth: Any = httpx.USE_CLIENT_DEFAULT,
+        follow_redirects: Any = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """
-        Make a request with JWS authentication.
+        Sign every outbound request as JWS before sending it.
 
-        This method overrides the parent class method to use JWS authentication.
-        Instead of making the request directly to the provided URL, it creates a JWS
-        payload and sends it to the Absolute API endpoint.
+        Overriding send() (instead of request()) guarantees this runs no matter
+        which entry point a caller uses: AsyncClient.get/post/request all build a
+        Request and call self.send() internally, and fastmcp>=4.0's OpenAPIProvider
+        calls build_request()+send() directly without ever calling request(). An
+        earlier version of this client overrode request() only; fastmcp>=4.0 never
+        calls it, which silently skipped JWS signing entirely for every real call.
 
         Args:
-            method: HTTP method (GET, POST, etc.)
-            url: Request URL
-            content, data, files: Request body
-            json: JSON body for the request
-            params: Query parameters
-            headers: Additional headers to include
-            cookies, auth, follow_redirects, timeout, extensions: Other httpx parameters
-            api_endpoint: Optional override for the API endpoint
-            **kwargs: Additional keyword arguments
+            request: The already-built outbound httpx.Request to sign and redirect
+                to the JWS validation endpoint.
+            stream, auth, follow_redirects: Passed through to the real send().
 
         Returns:
-            The HTTP response
+            The HTTP response from the JWS validation endpoint.
         """
+        # Add /v3 prefix to the path, this is necessary for JWS signature generation
+        path = request.url.path
+        path = "/v3" + path if not path.startswith("/v3") else path
+        query_string = request.url.query.decode("ascii")
 
-        # Add /v3 prefix to the URL, this is necessary for JWS signature generation
-        url = "/v3" + url if not url.startswith("/v3") else url
-
-        # Log the request method and URL
-        logger.debug(f"Making request: {method} {url}")
-
-        # Parse the URL to get the path and query string
-        parsed_url = urlparse(url)
-        path = parsed_url.path
-        query_string = parsed_url.query
-
-        # If params are provided, add them to the query string
-        if params:
-            additional_query = urlencode(params)
-            if query_string:
-                query_string = f"{query_string}&{additional_query}"
-            else:
-                query_string = additional_query
+        json_data: Optional[Dict[str, Any]] = None
+        if request.content:
+            json_data = json.loads(request.content)
 
         # Create the JWS payload
-        signed_payload = self._prepare_jws_payload(method, path, query_string, json)
+        signed_payload = self._prepare_jws_payload(
+            request.method, path, query_string, json_data
+        )
 
-        # Set the content type for the JWS request
-        jws_headers = {"content-type": "text/plain"}
+        # Set the content type for the JWS request, forwarding only genuinely
+        # custom headers the caller set -- not httpx's auto-computed transport
+        # headers, which described the *original* request, not this replacement
+        jws_headers: Dict[str, str] = {"content-type": "text/plain"}
+        for key, value in request.headers.items():
+            if key.lower() not in _PASSTHROUGH_EXCLUDED_HEADERS:
+                jws_headers[key] = value
 
-        # Merge with provided headers if any
-        if headers:
-            for key, value in headers.items():
-                if key.lower() != "content-type":  # Don't override content-type
-                    jws_headers[key] = value
+        # Use a custom API endpoint if the caller set one via extensions,
+        # otherwise use the default
+        endpoint = request.extensions.get("api_endpoint") or self.api_endpoint
 
-        # Use custom API endpoint if provided, otherwise use the default
-        endpoint = api_endpoint if api_endpoint else self.api_endpoint
-
-        # Make the request to the API endpoint with the signed payload
-        super_kwargs: Dict[str, Any] = {
-            "content": signed_payload,
-            "headers": jws_headers,
-            "cookies": cookies,
-            "timeout": timeout,
-            "extensions": extensions,
-        }
-        if follow_redirects is not None:
-            super_kwargs["follow_redirects"] = follow_redirects
-
-        return await super().request(
-            "POST",  # JWS validation always uses POST
-            endpoint,
-            **super_kwargs,
-            **kwargs,
+        # Build a fresh request to the JWS validation endpoint and send it via
+        # the real httpx.AsyncClient.send() (super(), not self -- calling self.send()
+        # here would re-enter this override and double-sign the already-signed payload)
+        signed_request = self.build_request(
+            "POST", endpoint, content=signed_payload, headers=jws_headers
+        )
+        return await super().send(
+            signed_request, stream=stream, auth=auth, follow_redirects=follow_redirects
         )

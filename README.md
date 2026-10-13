@@ -131,6 +131,10 @@ uv run pytest
 uv run pytest --cov=secure_endpoint_mcp
 ```
 
+See [`docs/testing.md`](docs/testing.md) for the test methodology, full report
+generation commands, and the latest baseline results under
+[`docs/test-reports/`](docs/test-reports/).
+
 ### MCP Inspector
 
 All the testings below assume that we have the following env vars

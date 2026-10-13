@@ -9,7 +9,7 @@ from unittest import mock
 
 import httpx
 import pytest
-from fastmcp.server.openapi import MCPType
+from fastmcp.server.providers.openapi import MCPType
 
 from secure_endpoint_mcp.config.settings import TransportMode
 from secure_endpoint_mcp.server.mcp_server import MCPServer
@@ -415,10 +415,10 @@ async def test_initialize_with_remote_spec(
     with mock.patch.object(
         server, "_fetch_openapi_spec", return_value=sample_openapi_spec
     ):
-        # Mock the FastMCPOpenAPI constructor
+        # Mock the FastMCP class so FastMCP.from_openapi(...) is a spy
         with mock.patch(
-            "secure_endpoint_mcp.server.mcp_server.FastMCPOpenAPI"
-        ) as mock_fastmcp_openapi:
+            "secure_endpoint_mcp.server.mcp_server.FastMCP"
+        ) as mock_fastmcp_class:
             # Mock the _extract_api_groups_from_openapi method
             with mock.patch.object(
                 server, "_extract_api_groups_from_openapi"
@@ -429,9 +429,9 @@ async def test_initialize_with_remote_spec(
                 # Assert that _extract_api_groups_from_openapi was called
                 mock_extract.assert_called_once()
 
-                # Assert that FastMCPOpenAPI was called with the correct parameters
-                mock_fastmcp_openapi.assert_called_once()
-                args, kwargs = mock_fastmcp_openapi.call_args
+                # Assert that FastMCP.from_openapi was called with the correct parameters
+                mock_fastmcp_class.from_openapi.assert_called_once()
+                args, kwargs = mock_fastmcp_class.from_openapi.call_args
                 assert kwargs["openapi_spec"] == sample_openapi_spec
                 assert kwargs["client"] == server.http_client
                 assert kwargs["route_map_fn"] == server._route_map_fn
